@@ -32,8 +32,10 @@ $(serviceName): $(serviceName).go $(typeName).go
 $(clientName): $(clientName).go $(typeName).go
 	ethosGo $^
 
-install: 
-	rm -rf $(ETHOSROOT)/services/$(typeName) $(ETHOSROOT)/types/spec/$(typeName)
+install:
+	sudo rm -rf server/
+	(ethosParams server && cd server/ && ethosBuilder && minimaltdBuilder)	
+	#rm -rf $(ETHOSROOT)/services/$(typeName) $(ETHOSROOT)/types/spec/$(typeName)
 	ethosDirCreate $(ETHOSROOT)/types/spec/$(typeName)	$(ETHOSROOT)/types/spec/kernelTypes/HashValue all
 	install -D $(typeName)/*				$(ETHOSROOT)/types/all
 	install -D $(typeName)Index/*				$(ETHOSROOT)/types/spec/$(typeName)
@@ -48,4 +50,4 @@ clean:
 	rm -f $(serviceName)
 	rm -f $(clientName)
 	rm -f $(serviceName).goo.ethos
-	rm-rf $(clientName).goo.ethos
+	rm -rf $(clientName).goo.ethos
