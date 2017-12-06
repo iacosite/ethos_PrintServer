@@ -13,9 +13,9 @@ export GOLINUXINCLUDE = /usr/lib64/go/pkg/linux/$(GOARCH)
 export ETHOSROOT = server/rootfs
 export MINIMALTDROOT = server/minimaltdfs
 
-typeName = myRpc
-TypeName = MyRpc
-typeIndex = 2
+typeName1 = myRpc
+TypeName1 = MyRpc
+typeIndex = 1
 serviceName = myRpcService
 clientName = myRpcClient
 
@@ -23,30 +23,33 @@ clientName = myRpcClient
 all: $(serviceName) $(clientName)
 
 
-$(typeName).go: myRpc.t
-	$(ETN2GO) . $(typeName) main $^
+$(typeName1).go: myRpc.t
+	$(ETN2GO) . $(typeName1) main $^
 
-$(serviceName): $(serviceName).go $(typeName).go
+
+$(serviceName): $(serviceName).go $(typeName1).go
 	ethosGo $^
 
-$(clientName): $(clientName).go $(typeName).go
+$(clientName): $(clientName).go $(typeName1).go
 	ethosGo $^
 
 install:
 	sudo rm -rf server/
 	(ethosParams server && cd server/ && ethosBuilder && minimaltdBuilder)	
-	#rm -rf $(ETHOSROOT)/services/$(typeName) $(ETHOSROOT)/types/spec/$(typeName)
-	ethosDirCreate $(ETHOSROOT)/types/spec/$(typeName)	$(ETHOSROOT)/types/spec/kernelTypes/HashValue all
-	install -D $(typeName)/*				$(ETHOSROOT)/types/all
-	install -D $(typeName)Index/*				$(ETHOSROOT)/types/spec/$(typeName)
-	ethosDirCreate $(ETHOSROOT)/services/$(typeName)	$(ETHOSROOT)/types/spec/$(typeName)/$(TypeName) all
+	ethosDirCreate $(ETHOSROOT)/types/spec/$(typeName1)	$(ETHOSROOT)/types/spec/kernelTypes/HashValue all
+	install -D $(typeName1)/*				$(ETHOSROOT)/types/all
+	install -D $(typeName1)Index/*				$(ETHOSROOT)/types/spec/$(typeName1)
+	ethosDirCreate $(ETHOSROOT)/services/$(typeName1)	$(ETHOSROOT)/types/spec/$(typeName1)/$(TypeName1) all
 	install -D $(clientName) $(serviceName)			$(ETHOSROOT)/programs
 	ethosStringEncode /programs/$(serviceName)>		$(ETHOSROOT)/etc/init/services/$(serviceName)
 	ethosStringEncode /programs/$(clientName)>		$(ETHOSROOT)/etc/init/services/$(clientName)
+	sudo mkdir $(ETHOSROOT)/user/nobody
+	sudo mkdir $(ETHOSROOT)/user/printService
+	sudo cp printFile $(ETHOSROOT)/user/nobody/printFile
 	
 clean:
-	rm -rf $(typeName)/ $(typeIndex)/
-	rm -f $(typeName).go
+	rm -rf $(typeName1)/ $(typeIndex)/
+	rm -f $(typeName1).go
 	rm -f $(serviceName)
 	rm -f $(clientName)
 	rm -f $(serviceName).goo.ethos
