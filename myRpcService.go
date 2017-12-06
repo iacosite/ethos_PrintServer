@@ -16,7 +16,7 @@ func init() {
 func increment() (MyRpcProcedure) {
 	logger.Printf("myRpcService: called increment\n")
 	myRpc_increment_counter++
-	return &MyrpcIncrementReply(myRpc_increment_counter)
+	return &MyRpcIncrementReply{myRpc_increment_counter}
 }
 
 func main () {
@@ -27,7 +27,7 @@ func main () {
 	}
 
 	for {
-		-, fd, status := altEthos.Import(listeningfd)
+		_, fd, status := altEthos.Import(listeningFd)
 		if status != syscall.StatusOk {
 			logger.Printf("Error calling import %v\n", status)
 		}
