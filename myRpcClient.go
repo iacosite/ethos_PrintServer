@@ -19,6 +19,8 @@ func incrementReply(count uint64) (MyRpcProcedure) {
 }
 
 func main () {
+	var n uint64
+	n = 200
 	logger.Printf("myRpcClient: before call\n")
 
 	fd, status := altEthos.IpcRepeat("myRpc", "", nil)
@@ -27,7 +29,7 @@ func main () {
 		altEthos.Exit(status)
 	}
 
-	call := MyRpcIncrement{}
+	call := MyRpcIncrement{n}
 	status = altEthos.ClientCall(fd, &call)
 	if status != syscall.StatusOk {
 		logger.Printf("clientCall failed: %v\n", status)

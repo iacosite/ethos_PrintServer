@@ -13,9 +13,9 @@ func init() {
 	SetupMyRpcIncrement(increment)
 }
 
-func increment() (MyRpcProcedure) {
+func increment(quantity uint64) (MyRpcProcedure) {
 	logger.Printf("myRpcService: called increment\n")
-	myRpc_increment_counter++
+	myRpc_increment_counter =+ quantity
 	return &MyRpcIncrementReply{myRpc_increment_counter}
 }
 

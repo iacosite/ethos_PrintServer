@@ -1,3 +1,3 @@
 MyRpc interface {
-	Increment() (count uint64)
+	Increment(n uint64) (count uint64)
 }

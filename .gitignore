@@ -1,1 +1,7 @@
 server/
+*.goo.ethos
+myRpcIndex
+myRpc
+myRpcService
+myRpcclient
+myRpc.go
