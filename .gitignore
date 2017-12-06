@@ -3,5 +3,5 @@ server/
 myRpcIndex
 myRpc
 myRpcService
-myRpcclient
+myRpcClient
 myRpc.go
