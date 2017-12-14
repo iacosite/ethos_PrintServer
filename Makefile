@@ -48,7 +48,7 @@ install:
 	sudo cp printFile $(ETHOSROOT)/user/nobody/printFile
 	
 clean:
-	rm -rf $(typeName1)/ $(typeIndex)/
+	rm -rf $(typeName1)/ $(typeName1)Index/
 	rm -f $(typeName1).go
 	rm -f $(serviceName)
 	rm -f $(clientName)
