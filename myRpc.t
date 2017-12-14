@@ -1,7 +1,18 @@
 MyRpc interface {
 	Increment(n uint64) (count uint64)
 	Box(buffer Box) (count uint64)
-	FileTransfer(buffer []uint8, t uint32, name string) (count uint64)
+	FileTransfer(buffer Param) (count uint64)
+	TestVars(tmp Par) (count uint64)
+}
+Param struct {
+	buff []uint8
+	t uint32
+	name string
+}
+Par struct {
+	a uint32
+	b uint64
+	c string
 }
 // Point is the representation of a coordinate in (X,Y)
 Point struct {

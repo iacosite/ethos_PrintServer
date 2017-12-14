@@ -21,10 +21,11 @@ func init() {
 	SetupMyRpcIncrement(increment)
 	SetupMyRpcBox(boxhandle)
 	SetupMyRpcFileTransfer(fileTransfer)
+	SetupMyRpcTestVars(test)
 }
 
-func test(a []uint8) (MyRpcProcedure) {
-	logger.Printf("myRpcService: called increment\n")
+func test(tmp Par) (MyRpcProcedure) {
+	logger.Printf("myRpcService: called test %v\n", tmp)
 	return &MyRpcIncrementReply{myRpc_increment_counter}
 }
 
@@ -42,17 +43,20 @@ func boxhandle(buff Box) (MyRpcProcedure) {
 }
 
 
-func fileTransfer (buff []uint8, t uint32, name string) (MyRpcProcedure) {
+func fileTransfer (param Param) (MyRpcProcedure) {
 	var ret uint64
+	name := param.name
+	t := param.t
+	buff := param.buff
 	logger.Printf("I recived something")
 	me := syscall.GetUser()
-	myDir := "/user/" + me + "/printService/"
+	myDir := "/user/" + me 
 	switch t {
-		case 1:
+		case 21:
 			var fd syscall.Fd
 			var fi kernelTypes.FileInformation
 			logger.Printf("myRpcService: Recived FileInformation!")
-			myDir += "FileInformation"
+			myDir += "/FileInformation"
 			fd, status := altEthos.DirectoryOpen(myDir)
 			if status != syscall.StatusOk {
 				status = altEthos.DirectoryCreate(myDir, &fi, "boh")
@@ -62,16 +66,19 @@ func fileTransfer (buff []uint8, t uint32, name string) (MyRpcProcedure) {
 					return &MyRpcFileTransferReply{ret}
 				}
 			}
+			fd, status = altEthos.DirectoryOpen(myDir)
+			check(status, "Couldn't open directory " + myDir)
 			// TODO check if the filename is already present
-			status = altEthos.WriteVarRaw(fd, myDir + name, buff)
+			status = altEthos.WriteVarRaw(fd, name, buff)
 			if status != syscall.StatusOk {
-				logger.Printf("myRpcService: Error, couldn't get var from data %v\n", status)
+				logger.Printf("myRpcService: Error, couldn't save recived data %v\n", status)
 				ret = 3
 				return &MyRpcFileTransferReply{ret}
 			}
 			break
 		default:
 			ret = 1
+			logger.Printf("myRpcService: FileType not found!")
 			return &MyRpcFileTransferReply{ret}
 	}
 	ret = 0
