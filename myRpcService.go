@@ -9,7 +9,6 @@ import (
 	"ethos/kernelTypes"
 )
 var MAX_ELEMENTS uint32 = 2
-var myRpc_increment_counter uint64 = 0
 var myRpc_count uint64 = 0
 var logger = log.Initialize("test/myRpcService")
 //list of files, we set set an initial dimension, but slices in go can be easily resized
@@ -23,30 +22,8 @@ var queue = make(chan string, MAX_ELEMENTS) // The queue
 
 
 func init() {
-	SetupMyRpcIncrement(increment)
-	SetupMyRpcBox(boxhandle)
 	SetupMyRpcFileTransfer(fileTransfer)
-	SetupMyRpcTestVars(test)
 }
-
-func test(tmp Par) (MyRpcProcedure) {
-	logger.Printf("myRpcService: called test %v\n", tmp)
-	return &MyRpcIncrementReply{myRpc_increment_counter}
-}
-
-func increment(quantity uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcService: called increment\n")
-	myRpc_increment_counter = myRpc_increment_counter + quantity
-	return &MyRpcIncrementReply{myRpc_increment_counter}
-}
-
-func boxhandle(buff Box) (MyRpcProcedure) {
-	myRpc_count += 1
-	sem <- 1//it's like a signal(sem+1), it blocks if sem==MAX, that is the buffer(sem) is full
-	logger.Printf("myRpcService: Box received %v and sent to the printer\n", buff)
-	return &MyRpcBoxReply{myRpc_count}
-}
-
 
 func fileTransfer (param Param) (MyRpcProcedure) {
 	var ret uint64
@@ -1401,6 +1378,7 @@ func main () {
 
 	}
 }
+
 func printer() {
 
 		var dname, path string

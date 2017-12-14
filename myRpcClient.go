@@ -13,27 +13,8 @@ import (
 var logger = log.Initialize("test/myRpcClient")
 
 func init() {
-	SetupMyRpcIncrementReply(incrementReply)
-	SetupMyRpcBoxReply(boxReply)
 	SetupMyRpcFileTransferReply(fileTransferReply)
-	SetupMyRpcTestVarsReply(testReply)
 }
-
-func testReply(count uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcClient: Recieved TestVar Reply: %v\n", count)
-	return nil
-}
-
-func incrementReply(count uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcClient: Recieved Increment Reply: %v\n", count)
-	return nil
-}
-
-func boxReply(count uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcClient: number of box printed: %v\n", count)
-	return nil
-}
-
 
 func fileTransferReply(count uint64) (MyRpcProcedure) {
 	logger.Printf("myRpcClient: Recieved %v from server after sending the file\n", count)
@@ -41,15 +22,6 @@ func fileTransferReply(count uint64) (MyRpcProcedure) {
 		logger.Printf("Apparently the print queue is full...")
 	}
 	return nil
-}
-
-func Random(size uint32) (randomString[]byte, status syscall.Status) {
-	eventId, status := syscall.Random(size)
-	if status != syscall.StatusOk {
-		return
-	}
-	randomString, _, status = syscall.BlockAndRetire(eventId)
-	return
 }
 
 func main () {
@@ -787,22 +759,7 @@ func createfile() {
 	status = altEthos.Write(path, &fileInfo)
 	check(status, "Couldn't write file")
 }
-func sendBoxes() {
-	var boxBuff Box
-	fd, status := altEthos.IpcRepeat("myRpc", "", nil)
-	check(status, "Ipc failed")
-//generate and send 3 random boxes
-	for i := 0; i<=3; i++{
-		rands, _ := Random(4)
-		ll := Point{int32(rands[0]), int32(rands[2])}
-		ur := Point{int32(rands[1]), int32(rands[3])}
-		boxBuff = Box{ll, ur}
-		call := MyRpcBox{boxBuff}
-		status = altEthos.ClientCall(fd, &call)
-		check(status, "ClientCall failed")
-	}
 
-}
 func compareHash(h1 kernelTypes.HashValue, h2 kernelTypes.HashValue) bool {
 	isEqual := true
 	for i, e := range h1 {
