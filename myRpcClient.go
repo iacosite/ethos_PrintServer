@@ -76,8 +76,23 @@ func main () {
 	status = altEthos.ClientCall(fd, &call)
 	check(status, "Failed to send data")
 
-/*
-// da qui c'e solo roba inutile, l'ho tenuta per avere un programma che funziona un minimo e trasmette un file
+	logger.Printf("myRpcClient: done\n")
+}
+
+// Create a fake file. Needed in order to be sent to the server. 
+func createfile() {
+	// Get info about some random file
+	filename := "/types/spec/kernelTypes/"
+	fileInfo, status := altEthos.GetFileInformation(filename)
+	check(status, "GetFileInformation failed")
+	// Store the file in a fixed directory
+	path := "/user/test/printFile"
+	status = altEthos.DirectoryCreate("/user/test", &fileInfo, "boh")
+	check(status, "Couldn't create directory " + path)
+	status = altEthos.Write(path, &fileInfo)
+	check(status, "Couldn't write file")
+}
+func sendBoxes() {
 	var boxBuff Box
 	fd, status := altEthos.IpcRepeat("myRpc", "", nil)
 	if status != syscall.StatusOk {
@@ -97,24 +112,8 @@ func main () {
 			altEthos.Exit(status)
 		}
 	}
-	*/
-	logger.Printf("myRpcClient: done\n")
-}
 
-// Create a fake file. Needed in order to be sent to the server. 
-func createfile() {
-	// Get info about some random file
-	filename := "/types/spec/kernelTypes/"
-	fileInfo, status := altEthos.GetFileInformation(filename)
-	check(status, "GetFileInformation failed")
-	// Store the file in a fixed directory
-	path := "/user/test/printFile"
-	status = altEthos.DirectoryCreate("/user/test", &fileInfo, "boh")
-	check(status, "Couldn't create directory " + path)
-	status = altEthos.Write(path, &fileInfo)
-	check(status, "Couldn't write file")
 }
-
 func compareHash(h1 kernelTypes.HashValue, h2 kernelTypes.HashValue) bool {
 	isEqual := true
 	for i, e := range h1 {
