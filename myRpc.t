@@ -1,9 +1,7 @@
 MyRpc interface {
 	Increment(n uint64) (count uint64)
-	Chunk(chunk []byte) (count uint64)
 	Box(buffer Box) (count uint64)
-	Uint32s(buffer uint32) (count uint64)
-	//FileInformation(buffer FileInformation) (count uint64)
+	FileTransfer(buffer []uint8, t uint32, name string) (count uint64)
 }
 // Point is the representation of a coordinate in (X,Y)
 Point struct {

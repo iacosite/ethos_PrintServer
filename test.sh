@@ -1,6 +1,6 @@
 #!/bin/sh
 cd server
 sudo ethosRun -t
-ethosLog .
+ethosLog . | tail -n 20 | sort
 cd ..
 sudo make clean >> /dev/null

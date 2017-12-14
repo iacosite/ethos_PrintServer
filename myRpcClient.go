@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"ethos/altEthos"
 	"ethos/syscall"
 	"ethos/log"
@@ -11,16 +12,10 @@ var logger = log.Initialize("test/myRpcClient")
 
 func init() {
 	SetupMyRpcIncrementReply(incrementReply)
-	SetupMyRpcChunkReply(chunkReply)
 	SetupMyRpcBoxReply(boxReply)
-	SetupMyRpcUint32sReply(uint32Reply)
-//	SetupMyRpcFileInformationReply(fileInformationReply)
+	SetupMyRpcFileTransferReply(fileTransferReply)
 }
 
-func chunkReply(count uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcClient: Service wrote %v bytes\n", count)
-	return nil
-}
 
 func incrementReply(count uint64) (MyRpcProcedure) {
 	logger.Printf("myRpcClient: Recieved Increment Reply: %v\n", count)
@@ -32,15 +27,11 @@ func boxReply(count uint64) (MyRpcProcedure) {
 	return nil
 }
 
-func uint32Reply(count uint64) (MyRpcProcedure) {
-	logger.Printf("myRpcClient: number of Uint32 printed: %v\n", count)
+
+func fileTransferReply(count uint64) (MyRpcProcedure) {
+	logger.Printf("myRpcClient: Recieved %v from server after sending the file\n", count)
 	return nil
 }
-
-//func fileInformatoinReply(count uint64) (MyRpcProcedure) {
-//	logger.Printf("myRpcClient: number of FileInformation printed: %v\n", count)
-//	return nil
-//}
 
 func Random(size uint32) (randomString[]byte, status syscall.Status) {
 	eventId, status := syscall.Random(size)
@@ -52,43 +43,42 @@ func Random(size uint32) (randomString[]byte, status syscall.Status) {
 }
 
 func main () {
-	var boxBuff Box
-//	filename := "/user/test/"
-//	createfile()
-
+	createfile()
+	// Name of the file we will need to print
+	// Get the directory in order to understand the type of file
+	filename := "/user/test/"
+	name := "test"
+	var t uint32
+	var bytes []uint8
+	var fd syscall.Fd
 	logger.Printf("myRpcClient: before call\n")
+	// Get file information
+	fileInfo, status := altEthos.GetFileInformation(filename)
+	check(status, "GetFileInformation failed")
+	// Beginning of the if-else waterfall
+	if (isType(fileInfo.TypeHash, "FileInformation")) {
+		logger.Printf("type recognized")
+		fd, status = altEthos.DirectoryOpen(filename)
+		check(status, "DirectoryOpen failed")
+		// Read the file in raw form (only bytes)
+		bytes, status = altEthos.ReadVarRaw(fd, "printFile")
+		check(status, "ReadVarWar failed")
+		// 1 is the identifier relative to FileInformation
+		t = 1
+	} else {
+		// Another type
+		logger.Printf("wrong type mate")
+	}
+	logger.Printf("Bytes[%v]: %v\n", reflect.TypeOf(bytes), bytes)
+	logger.Printf("Type[%v]: %v\n", reflect.TypeOf(t), t)
+	logger.Printf("Name[%v]: %v\n", reflect.TypeOf(name), name)
+	call := MyRpcFileTransfer{bytes, t, name}
+	status = altEthos.ClientCall(fd, &call)
+	check(status, "Failed to send data")
 
-//	fileInfo, status := altEthos.GetFileInformation(filename)
-//	if status != syscall.StatusOk {
-//		logger.Fatalf("myRpcClient: GetFileInformation failed %v\n", status)
-//		altEthos.Exit(status)
-//	}
-//	logger.Printf("myRpcClient: File info: %v", fileInfo)
-//	logger.Printf("Label: %v", fileInfo.Label)
-
-//	typeHash := fileInfo.TypeHash
-
-
-
-//	tmpHash, status := altEthos.TypeNameToHash("kernelTypes", "FileInformation")
-//	if status != syscall.StatusOk {
-//		logger.Printf("myRpcClient: TypeNameToHash failed %v\n", status)
-//		altEthos.Exit(status)
-//	}
-//	if (compareHash(tmpHash, typeHash)) {
-//		logger.Printf("type recognized")
-//		call := MyRpcFileInformation{buff}
-//		status = altEthos.ClientCall(fd, &call)
-//		if status != syscall.StatusOk {
-//			logger.Printf("clientCall failed: %v\n", status)
-//			altEthos.Exit(status)
-//		}
-//	} else {
-//		logger.Printf("wrong type mate")
-//	}
-
-
+/*
 // da qui c'e solo roba inutile, l'ho tenuta per avere un programma che funziona un minimo e trasmette un file
+	var boxBuff Box
 	fd, status := altEthos.IpcRepeat("myRpc", "", nil)
 	if status != syscall.StatusOk {
 		logger.Printf("Ipc failed %v\n", status)
@@ -107,6 +97,7 @@ func main () {
 			altEthos.Exit(status)
 		}
 	}
+	*/
 	logger.Printf("myRpcClient: done\n")
 }
 
@@ -115,21 +106,13 @@ func createfile() {
 	// Get info about some random file
 	filename := "/types/spec/kernelTypes/"
 	fileInfo, status := altEthos.GetFileInformation(filename)
-	if status != syscall.StatusOk {
-		logger.Fatalf("myRpcClient: GetFileInformation failed %v\n", status)
-		altEthos.Exit(status)
-	}
+	check(status, "GetFileInformation failed")
 	// Store the file in a fixed directory
 	path := "/user/test/printFile"
 	status = altEthos.DirectoryCreate("/user/test", &fileInfo, "boh")
-	if status != syscall.StatusOk {
-		logger.Fatalf("myRpcClient: Couldn't create directory %v: %v\n", path, status)
-	}
+	check(status, "Couldn't create directory " + path)
 	status = altEthos.Write(path, &fileInfo)
-	if status != syscall.StatusOk {
-		logger.Fatalf("myRpcClient: Couldn't write file %v\n", status)
-	}
-	//logger.Printf("myRpcClient: File written in %v:\n%v\n", path, fileInfo)
+	check(status, "Couldn't write file")
 }
 
 func compareHash(h1 kernelTypes.HashValue, h2 kernelTypes.HashValue) bool {
@@ -140,4 +123,16 @@ func compareHash(h1 kernelTypes.HashValue, h2 kernelTypes.HashValue) bool {
 		}
 	}
 	return isEqual
+}
+
+func isType(h kernelTypes.HashValue, t string) bool {
+	tmpHash, status := altEthos.TypeNameToHash("kernelTypes", t)
+	check(status, "TypeNameToHash failed")
+	return compareHash(h, tmpHash)
+}
+
+func check(status syscall.Status, s string) {
+	if status != syscall.StatusOk {
+		logger.Fatalf("myRpcClient: " + s + " - %v\n",  status)
+	}
 }

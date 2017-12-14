@@ -4,8 +4,7 @@ import (
 	"ethos/syscall"
 	"ethos/altEthos"
 	"ethos/log"
-//	"time"
-//	"ethos/kernelTypes"
+	"ethos/kernelTypes"
 )
 
 var myRpc_increment_counter uint64 = 0
@@ -18,9 +17,12 @@ var sem = make(chan uint64, 2)
 func init() {
 	SetupMyRpcIncrement(increment)
 	SetupMyRpcBox(boxhandle)
-	SetupMyRpcUint32s(uint32handle)
-	SetupMyRpcChunk(chunk)
-//	SetupMyRpcFileInformaiton(fileInformation)
+	SetupMyRpcFileTransfer(fileTransfer)
+}
+
+func test(a []uint8) (MyRpcProcedure) {
+	logger.Printf("myRpcService: called increment\n")
+	return &MyRpcIncrementReply{myRpc_increment_counter}
 }
 
 func increment(quantity uint64) (MyRpcProcedure) {
@@ -32,14 +34,6 @@ func increment(quantity uint64) (MyRpcProcedure) {
 func boxhandle(buff Box) (MyRpcProcedure) {
 	myRpc_count += 1
 // tried to implement a sleep with Beep, but it doesn't sleep the amount of time we want
-//		var time syscall.Time64
-//		time = 5*1000000000 // 5 seconds(time is in nanoseconds)
-//		logger.Printf("Wait 5 seconds\n")
-//		_ ,status := syscall.Beep(time)//similar to sleep
-//		if status != syscall.StatusOk {
-//			logger.Fatalf ("Error Beep syscall\n")
-//		}
-//		logger.Printf("resume\n")
 
 
 	sem <- 1//it's like a signal(sem+1), it blocks if sem==MAX, that is the buffer(sem) is full
@@ -70,16 +64,6 @@ func boxhandle(buff Box) (MyRpcProcedure) {
 	}()
 
 
-//implement a sleep with a loop
-//	time1 := syscall.GetTime()
-//	logger.Printf("start wait\n")
-//	var i uint64 = 1
-//it waits around 1 sec with 3*10^9, so for instance 6*(3*10^9) it's around 6 sec
-//	for i <= 3000000000*6 {
-//		i = i+1
-//	}
-//	time2 := syscall.GetTime()
-//	logger.Printf("time waited in ms %v\n", (time2-time1)/1000000)
 
 
 //tried to implement a sleep with time.Sleep, but you can't use time.Second or time.Millisecond to put inside like for instance time.Sleep(time.Second * 3)
@@ -88,40 +72,50 @@ func boxhandle(buff Box) (MyRpcProcedure) {
 	return &MyRpcBoxReply{myRpc_count}
 }
 
-func uint32handle(buff uint32) (MyRpcProcedure) {
-	var count uint64
-	count = 1
-	logger.Printf("myRpcService: Recived Uint32 %v\n", buff)
-	return &MyRpcUint32sReply{count}
-}
 
-func chunk(chunk []byte) (MyRpcProcedure) {
-	var count uint64
-	count = 1
-	logger.Printf("myRpcService: called chunk\n")
-	return &MyRpcBoxReply{count}
+func fileTransfer (buff []uint8, t uint32, name string) (MyRpcProcedure) {
+	var ret uint64
+	logger.Printf("I recived something")
+	me := syscall.GetUser()
+	myDir := "/user/" + me + "/printService/"
+	switch t {
+		case 1:
+			var fd syscall.Fd
+			var fi kernelTypes.FileInformation
+			logger.Printf("myRpcService: Recived FileInformation!")
+			myDir += "FileInformation"
+			fd, status := altEthos.DirectoryOpen(myDir)
+			if status != syscall.StatusOk {
+				status = altEthos.DirectoryCreate(myDir, &fi, "boh")
+				if status != syscall.StatusOk {
+					logger.Fatalf("myRpcService: Couldn't create directory %v: %v\n", myDir, status)
+					ret = 2
+					return &MyRpcFileTransferReply{ret}
+				}
+			}
+			// TODO check if the filename is already present
+			status = altEthos.WriteVarRaw(fd, myDir + name, buff)
+			if status != syscall.StatusOk {
+				logger.Printf("myRpcService: Error, couldn't get var from data %v\n", status)
+				ret = 3
+				return &MyRpcFileTransferReply{ret}
+			}
+			break
+		default:
+			ret = 1
+			return &MyRpcFileTransferReply{ret}
+	}
+	ret = 0
+	return &MyRpcFileTransferReply{uint64(0)}
 }
-
-//func fileInformation (buff kernelTypes.FileInformation) (MyRpcProcedure) {
-//	var count uint64
-//	count = 1
-//	logger.Printf("myRpcService: recived fileInformation %v \n", buff)
-//	return &MyRpcBoxReply{count}
-//}
 
 func main () {
 	listeningFd, status := altEthos.Advertise("myRpc")
-	if status != syscall.StatusOk {
-		logger.Printf("Advertising service failes %s\n", status)
-		altEthos.Exit(status)
-	}
+	check(status, "Advertising service failes")
 
 	for {
 		_, fd, status := altEthos.Import(listeningFd)
-		if status != syscall.StatusOk {
-			logger.Printf("Error calling import %v\n", status)
-		}
-
+		check(status, "Error calling import")
 		logger.Printf("myRpcService: new connection accepted\n")
 
 		//loop for client sending more RPCs
@@ -130,5 +124,11 @@ func main () {
 			altEthos.Handle(fd, &t)
 		}
 
+	}
+}
+
+func check(status syscall.Status, s string) {
+	if status != syscall.StatusOk {
+		logger.Fatalf("myRpcService: " + s + " - %v\n",  status)
 	}
 }
