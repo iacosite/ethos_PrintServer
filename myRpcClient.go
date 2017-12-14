@@ -37,6 +37,9 @@ func boxReply(count uint64) (MyRpcProcedure) {
 
 func fileTransferReply(count uint64) (MyRpcProcedure) {
 	logger.Printf("myRpcClient: Recieved %v from server after sending the file\n", count)
+	if count == 1 {
+		logger.Printf("Apparently the print queue is full...")
+	}
 	return nil
 }
 
@@ -53,15 +56,15 @@ func main () {
 	// filename will be the only parameter recived by the program
 	filename := "/user/test/printFile"
 
+	var t uint32
+	var bytes []uint8
+	var fd syscall.Fd
 	sock, status := altEthos.IpcRepeat("myRpc", "", nil)
 	check(status, "Ipc failed")
 	createfile()
 	// Name of the file we will need to print
 	// Get the directory in order to understand the type of file
 	dname, fname := parseName(filename) 
-	var t uint32
-	var bytes []uint8
-	var fd syscall.Fd
 	logger.Printf("myRpcClient: before call\n")
 	// Get file information
 	fileInfo, status := altEthos.GetFileInformation(dname)
@@ -760,11 +763,6 @@ func main () {
 		// Another type
 		logger.Printf("wrong type mate")
 	}
-//	var test Par
-//	test = Par{uint32(1), uint64(2), name}
-//	call1 := MyRpcTestVars{test}
-//	status = altEthos.ClientCall(sock, &call1)
-//	check(status, "Failed to test vars")
 	logger.Printf("Bytes[%v]: %v\n", reflect.TypeOf(bytes), bytes)
 	logger.Printf("Type[%v]: %v\n", reflect.TypeOf(t), t)
 	logger.Printf("Name[%v]: %v\n", reflect.TypeOf(fname), fname)
