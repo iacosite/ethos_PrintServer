@@ -18,8 +18,22 @@ func init() {
 
 func fileTransferReply(count uint64) (MyRpcProcedure) {
 	logger.Printf("myRpcClient: Recieved %v from server after sending the file\n", count)
-	if count == 1 {
-		logger.Printf("Apparently the print queue is full...")
+	switch count {
+	case 1:
+		logger.Printf("Apparently the print queue is full...\n")
+		break
+	case 2:
+		logger.Printf("File type not found by server\n")
+		break
+	case 3:
+		logger.Printf("Server could not save file\n")
+		break
+	case 4:
+		logger.Printf("Error in data transfer\n")
+		break
+	default:
+		logger.Printf("Return value not recognized \n")
+		break
 	}
 	return nil
 }
